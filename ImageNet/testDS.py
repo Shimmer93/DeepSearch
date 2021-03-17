@@ -17,6 +17,7 @@ from pickle import dump,load
 import sys
 from sys import argv
 from datetime import datetime
+import time
 from os import mkdir
 from os.path import exists
 if not exists("DSBatched"):
@@ -33,6 +34,8 @@ if len(argv)>2:
 Data={}
 succ=0
 tot=0
+
+t0 = time.time()
 for j in tqdm(range(1000)):
     tot+=1
     print("Starting attack on image", j, "with index",inds[j])
@@ -45,3 +48,4 @@ for j in tqdm(range(1000)):
     else:
         print("Attack Failed using",ret[2],"queries, success rate is",100*succ/tot)
     dump(Data,open(path+"data.pkl","wb"))
+print(f'time: {(time.time()-t0)/3600} hrs')

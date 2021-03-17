@@ -4,6 +4,7 @@ from pickle import dump,load
 import sys
 from sys import argv
 from datetime import datetime
+import time
 from os import mkdir
 from os.path import exists
 if not exists("DSBatched"):
@@ -23,9 +24,10 @@ tot=0
 
 print(my_model)
 
+t0 = time.time()
 for j in tqdm(range(1000)):
     tot+=1
-    ret=DeepSearchBatched(x_test[j:j+1],my_model,y_test[j],8/255,max_calls=10000, batch_size=64,x_ent=loss,gr_init=grs)
+    ret=DeepSearchBatched(x_test[j:j+1],my_model,y_test[j],4/255,max_calls=20000, batch_size=56,x_ent=loss,gr_init=grs)
     dump(ret[1].reshape(1,28,28,1),open(path+"image_"+str(j)+".pkl","wb"))
     Data[j]=(ret[0],ret[2])
     if ret[0]:
@@ -34,3 +36,4 @@ for j in tqdm(range(1000)):
     else:
         print("Attack Failed using",ret[2],"queries, success rate is",100*succ/tot)
     dump(Data,open(path+"data.pkl","wb"))
+print(f"Total time: {(time.time()-t0)/3600}hrs")

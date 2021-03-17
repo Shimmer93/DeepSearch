@@ -23,7 +23,7 @@ x_test=x_test.reshape(10000,32,32,3)
 y_test=y_test.reshape(-1)
 class CompatModel:
     def __init__(self,folder):
-        self.sess=tf.compat.v1.Session()
+        self.sess=tf.Session()
         model_file = tf.train.latest_checkpoint(folder)
         model=Model("eval")
         saver = tf.train.Saver()

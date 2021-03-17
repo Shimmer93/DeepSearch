@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from torchvision.models import inception_v3
+from torchvision.models import inception_v3, vgg19
 from torchvision import transforms
 from PIL import Image
 import torch
@@ -22,7 +22,7 @@ INDICES=""
 normalize = lambda x:(x-np.array([0.485, 0.456, 0.406]))/np.array([0.229, 0.224, 0.225])
 class CompatModel:
     def __init__(self):
-        self.model=inception_v3(pretrained=True)
+        self.model=vgg19(pretrained=True) #inception_v3(pretrained=True)
         self.model.cuda()
         self.model.eval()
         self.calls=0

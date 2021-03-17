@@ -19,6 +19,7 @@ class Image:
     def __init__(self, base, model, true_class, epsilon, group_size=1, group_axes=[1,2], u_bound=1,l_bound=0,start_mode=-1, logits=False, x_ent=False,verbose=True):
         preprocess=lambda x:x.reshape(base.shape)
         self.orig_shape=base.shape
+        #print(base.shape)
         self.calls=0
         self.group_axes=group_axes
         self.verbose=verbose
@@ -78,7 +79,9 @@ class Image:
             else:
                 indices.append([j[i]])
         ret=[]
+        #print(indices)
         for k in product(*indices):
+            #print(k)
             ret.append(self.rmap[k])
         return ret
     def get_pivots(self,direction):

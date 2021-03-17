@@ -18,7 +18,6 @@ import heapq
 from pickle import load
 class Image:
     def __init__(self, base, model, true_class, epsilon, group_size=1, group_axes=[1,2], u_bound=1,l_bound=0,start_mode=-1, logits=False, x_ent=False,verbose=True):
-        #preprocess=lambda x:x.reshape(base.shape)
         base = base.reshape((1, 28, 28, 1))
         preprocess=lambda x:x.reshape(base.shape)
         self.orig_shape=base.shape
@@ -26,12 +25,10 @@ class Image:
         self.group_axes=group_axes
         self.verbose=verbose
         self.group_size=group_size
-        #print(base.shape)
         def predict(x):
             self.calls+=1
             y = preprocess(x)
             y = torch.tensor(y, dtype=torch.float)
-            #print(x.shape)
             y = y.reshape((1, 1, 28, 28))
             with torch.no_grad():
                 y= model(y)
@@ -39,8 +36,6 @@ class Image:
         self.predict=predict
         self.true_class=true_class
         self.upper=np.clip(base.reshape(-1)+epsilon,l_bound,u_bound)
-        #print(base.shape)
-        #print(self.upper.shape)
         self.lower=np.clip(base.reshape(-1)-epsilon,l_bound,u_bound)
         self.status=np.ones_like(self.lower)
         if start_mode>0:
@@ -75,24 +70,25 @@ class Image:
         self.loss=loss(self.image)
         self.stale=np.zeros_like(self.gains)
         self.rmap=preprocess(np.arange(len(self.image)))
+        #print(self.rmap)
     def get_indices(self,source):
         j=[]
         for i in reversed(self.orig_shape):
             j.append(source % i)
             source=source//i
         j=list(reversed(j))
+        #print(j)
         for i in self.group_axes:
             j[i]=j[i]-(j[i] % self.group_size)
         indices=[]
         for i in range(len(self.orig_shape)):
             if i in self.group_axes:
+                #if j[i]+self.group_size < 28:
                 indices.append(list(range(j[i],np.minimum(j[i]+self.group_size, 28))))
             else:
                 indices.append([j[i]])
         ret=[]
-        #print(indices)
         for k in product(*indices):
-            #print(k)
             ret.append(self.rmap[k])
         return ret
     def get_pivots(self,direction):
@@ -100,6 +96,7 @@ class Image:
         ret=[]
         for i in range(len(self.orig_shape)):
             indices.append(list(range(0,self.orig_shape[i],self.group_size if i in self.group_axes else 1)))
+        #print(indices)
         for k in product(*indices):
             if direction==0 or self.status[self.rmap[k]]==direction:
                 ret.append(self.rmap[k])
@@ -306,7 +303,6 @@ def DeepSearch(image,model,true_class,epsilon,max_calls):
 
 
 def DeepSearchBatched(image,model,true_class,epsilon,max_calls,batch_size=64,randomize=True,x_ent=False,gr_init=4):
-    #print("why cannot print???????????????????????")
     target=Image(image,model,true_class,epsilon,group_size=gr_init,x_ent=x_ent)
     print("Initial loss is",target.loss)
     while(target.loss>-10000 and target.calls<max_calls):
