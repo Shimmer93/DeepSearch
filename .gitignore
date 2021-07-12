@@ -1,0 +1,6 @@
+*__pycache__/
+*saved_models/
+*DSBatched/
+*.bmp
+CIFAR/data/
+CIFAR/read_indices.py

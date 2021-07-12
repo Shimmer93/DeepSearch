@@ -35,6 +35,9 @@ Data={}
 succ=0
 tot=0
 
+with open('imagenet_indices.txt', 'r') as f:
+    inds = [int(i) for i in f.readlines()]
+
 t0 = time.time()
 for j in tqdm(range(1000)):
     tot+=1

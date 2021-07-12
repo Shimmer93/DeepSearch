@@ -12,13 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import numpy as np 
-import torch
 from itertools import product
 import heapq
 from pickle import load
+import torch
+
+def cifar_preprocessing(x_test):
+    mean = [125.307, 122.95, 113.865]
+    std = [62.9932, 62.0887, 66.7048]
+    for i in range(3):
+        x_test[:, i, :, :] = (x_test[:, i, :, :] - mean[i]) / std[i]
+    return x_test
+
 class Image:
     def __init__(self, base, model, true_class, epsilon, group_size=1, group_axes=[1,2], u_bound=1,l_bound=0,start_mode=-1, logits=False, x_ent=False,verbose=True):
-        base = base.reshape((1, 28, 28, 1))
+        base = base.reshape((1, 32, 32, 1))
         preprocess=lambda x:x.reshape(base.shape)
         self.orig_shape=base.shape
         self.calls=0
@@ -27,12 +35,8 @@ class Image:
         self.group_size=group_size
         def predict(x):
             self.calls+=1
-            y = preprocess(x)
-            y = torch.tensor(y, dtype=torch.float)
-            y = y.reshape((1, 1, 28, 28))
-            with torch.no_grad():
-                y= model(y)
-            return y.detach().numpy().reshape(-1)
+            #return np.array(model(preprocess(x))).reshape(-1)
+            return model.predict(preprocess(x)).reshape(-1)
         self.predict=predict
         self.true_class=true_class
         self.upper=np.clip(base.reshape(-1)+epsilon,l_bound,u_bound)
@@ -70,21 +74,18 @@ class Image:
         self.loss=loss(self.image)
         self.stale=np.zeros_like(self.gains)
         self.rmap=preprocess(np.arange(len(self.image)))
-        #print(self.rmap)
     def get_indices(self,source):
         j=[]
         for i in reversed(self.orig_shape):
             j.append(source % i)
             source=source//i
         j=list(reversed(j))
-        #print(j)
         for i in self.group_axes:
             j[i]=j[i]-(j[i] % self.group_size)
         indices=[]
         for i in range(len(self.orig_shape)):
             if i in self.group_axes:
-                #if j[i]+self.group_size < 28:
-                indices.append(list(range(j[i],np.minimum(j[i]+self.group_size, 28))))
+                indices.append(list(range(j[i],j[i]+self.group_size)))
             else:
                 indices.append([j[i]])
         ret=[]
@@ -96,14 +97,11 @@ class Image:
         ret=[]
         for i in range(len(self.orig_shape)):
             indices.append(list(range(0,self.orig_shape[i],self.group_size if i in self.group_axes else 1)))
-        #print(indices)
         for k in product(*indices):
             if direction==0 or self.status[self.rmap[k]]==direction:
                 ret.append(self.rmap[k])
-        #print(ret)
         return ret
     def gain(self, index, force=False, no_update=False, direction=0):
-        #print(self.get_indices(index))
         if direction==0:
             if self.status[index]>0:
                 direction=-1
@@ -112,9 +110,6 @@ class Image:
         if self.gains_to[index]==direction and (not force):
             return self.gains[index]
         pert=self.image.copy()
-        #print("emmm", self.orig_shape)
-        #print(self.upper.shape)
-        #print(index)
         pert[self.get_indices(index)]=self.lower[self.get_indices(index)] if direction<0 else self.upper[self.get_indices(index)]
         res=self.loss_fn(pert)
         self.gains_to[index]=direction

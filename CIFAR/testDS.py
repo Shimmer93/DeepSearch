@@ -18,6 +18,9 @@ from sys import argv
 from datetime import datetime
 from os import mkdir
 from os.path import exists
+import random
+import time
+from tqdm import tqdm
 if not exists("DSBatched"):
     mkdir("DSBatched")
 path="DSBatched/"+str(datetime.now())+"/"
@@ -33,12 +36,17 @@ Data={}
 succ=0
 tot=0
 if argv[1]=="undef":
-    from madryCifarUndefWrapper import *
-    target_set=load(open("indices.pkl","rb"))
+    from dnntestCifarUndefWrapper import *
+    #target_set=load(open("indices.pkl","rb"))
 else:
-    from madryCifarWrapper import *
-    target_set=load(open("def_indices.pkl","rb"))
-for j in target_set:
+    from dnntestCifarWrapper import *
+    #target_set=load(open("def_indices.pkl","rb"))
+
+with open('cifar_indices.txt', 'r') as f:
+    target_set = [int(i) for i in f.readlines()]
+
+t0 = time.time()
+for j in tqdm(target_set):
     tot+=1
     print("Starting attack on image", tot, "with index",j)
     ret=DeepSearchBatched(x_test[j:j+1],mymodel,y_test[j],8/255,max_calls=20000, batch_size=64,x_ent=loss,gr_init=grs)
@@ -50,3 +58,4 @@ for j in target_set:
     else:
         print("Attack Failed using",ret[2],"queries, success rate is",100*succ/tot)
     dump(Data,open(path+"data.pkl","wb"))
+print(f"Total time: {(time.time()-t0)/3600}hrs")

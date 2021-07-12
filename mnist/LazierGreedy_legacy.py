@@ -12,20 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import numpy as np 
+import torch
 from itertools import product
 import heapq
 from pickle import load
-import torch
-
-def cifar_preprocessing(x_test):
-    mean = [125.307, 122.95, 113.865]
-    std = [62.9932, 62.0887, 66.7048]
-    for i in range(3):
-        x_test[:, i, :, :] = (x_test[:, i, :, :] - mean[i]) / std[i]
-    return x_test
-
 class Image:
     def __init__(self, base, model, true_class, epsilon, group_size=1, group_axes=[1,2], u_bound=1,l_bound=0,start_mode=-1, logits=False, x_ent=False,verbose=True):
+        base = base.reshape((1, 28, 28, 1))
         preprocess=lambda x:x.reshape(base.shape)
         self.orig_shape=base.shape
         self.calls=0
@@ -34,8 +27,13 @@ class Image:
         self.group_size=group_size
         def predict(x):
             self.calls+=1
-            #return np.array(model(preprocess(x))).reshape(-1)
-            return model.predict(preprocess(x)).reshape(-1)
+            return np.array(model(preprocess(x))).reshape(-1)
+            #y = preprocess(x)
+            #y = torch.tensor(y, dtype=torch.float)
+            #y = y.reshape((1, 1, 28, 28))
+            #with torch.no_grad():
+            #    y= model(y)
+            #return y.detach().numpy().reshape(-1)
         self.predict=predict
         self.true_class=true_class
         self.upper=np.clip(base.reshape(-1)+epsilon,l_bound,u_bound)
@@ -84,7 +82,7 @@ class Image:
         indices=[]
         for i in range(len(self.orig_shape)):
             if i in self.group_axes:
-                indices.append(list(range(j[i],j[i]+self.group_size)))
+                indices.append(list(range(j[i],np.minimum(j[i]+self.group_size, 28))))
             else:
                 indices.append([j[i]])
         ret=[]

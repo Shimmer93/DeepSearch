@@ -45,6 +45,7 @@ class Image:
         def loss(image):
             res=self.predict(image)
             if np.argmax(res)!=true_class:
+                #print(np.argmax(res), ' ', true_class)
                 return -50000
             if logits:
                 if x_ent:
